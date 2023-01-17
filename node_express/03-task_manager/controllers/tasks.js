@@ -46,6 +46,7 @@ const deleteTask = async (req, res) => {
   const { rowCount } = await db.query("DELETE FROM task WHERE task_id = $1", [
     id,
   ]);
+  //le $1 etc. est une requête préparée
   if (rowCount === 0) {
     return res.status(404).json({ msg: "pas de tâches" });
   }
