@@ -1,68 +1,95 @@
-const StatusCodes = require('StatusCodes');
-const notFound = require('../middleware/not-found');
-const createJob = async (req, res) => {
-  console.log(req.user);
+const { StatusCodes } = require('http-status-codes');
+const db = require('../db');
+const { BadRequestError, NotFoundError } = require('../errors');
 
+const createJob = async (req, res) => {
   // récupère les infos du forumulaire
+  const { company, position } = req.body;
+
   // récupère userID
-  ('insert into jobs () VALUES ($1)');
+  const { userID } = req.user;
 
   // requête : insère dans jobs
+  const {
+    rows: [job],
+  } = await db.query(
+    'insert into jobs (company, position, user_id) VALUES ($1, $2, $3) RETURNING*',
+    [company, position, userID]
+  );
 
   // retourne une réponse json { jobs, count }
-  res.status(201).send('crée un job');
+  res.status(StatusCodes.CREATED).json({ job });
 };
 
 const getAllJobs = async (req, res) => {
   // requête : récupère tous les jobs de l'utilisateur
-  const { jobs } = req.query;
-  let queryString = 'select * from jobs';
+  const { userID } = req.user;
+  const { rows: jobs } = await db.query(
+    'select * from jobs where user_id= $1',
+    [userID]
+  );
 
-  if (jobs) {
-    queryString = `select ${jobs} from jobs`;
-  }
-
-  // retourne une réponse json { jobs, count }
-  res.status(200).json({ jobs, count }).send('récupère tous les jobs');
+  res.status(StatusCodes.OK).json({ jobs, count: jobs.length });
 };
+
+// retourne une réponse json { jobs, count }
 
 const getJob = async (req, res) => {
   // récupère userID et l'id du job (dans l'url)
-  const { userID, job_id } = job;
+  const { id } = req.params;
+  // requête : récupère un job en particulier de l'utilisateur
+  const {
+    rows: [job],
+  } = await db.query('select * from jobs where job_id = $1, {Number[id]}');
   // Si pas de job jeter notFoundError (il faut faut créer la classe dans /errors)
   if (!job) {
-    res.status(404).res.json('notFound');
+    throw new NotFoundError(`Pas de job avec l'id : ${id}`);
   }
-  // requête : récupère un job en particulier de l'utilisateur
 
   // retourne une réponse json { jobs }
-  res.send('récupère un job');
+  res.status(StatusCodes.OK).json({ job });
 };
 
 const updateJob = async (req, res) => {
   // récupère les infos du forumulaire
+  const { company, position, status } = req.body;
   // récupère userID
+  const { id: jobID } = req.params;
 
   // Si pas de company ou de position jeter une erreur mauvaise requête
-
+  if (!company || !position) {
+    throw new BadRequestError('invalide');
+  }
   // requête : met à jour un job en particulier de l'utilisateur
-
+  const {
+    rows: [job],
+  } = await db.query(
+    'UPDATE jobs SET company = $1, position = $2, status = $3 WHERE job_id = $4 RETURNING *',
+    [company, position, status, jobID]
+  );
   // Si pas de user jeter notFoundError
-
+  if (!job) {
+    throw new NotFoundError(`Pas de job avec l'id : ${jobID}`);
+  }
   // retourne une réponse json { jobs }
-  res.send('met à jour un job');
+  res.status(StatusCodes.OK).json({ job });
 };
 
 const deleteJob = async (req, res) => {
   // récupère les infos du forumulaire
-  // récupère userID
+  const { id: jobID } = req.params;
 
   // requête : supprimer un job particulier de l'utilisateur
+  const {
+    rows: [job],
+  } = await db.query('DELETE FROM jobs WHERE job_id = $1 RETURNING *', [jobID]);
 
-  // Si pas de user jeter notFoundError
-
+  // Si pas de job jeter notFoundError
+  if (!job) {
+    throw new NotFoundError(`Pas de job avec l'id : ${jobID}`);
+  }
   // retourne une réponse json { jobs }
-  res.send('supprime un job');
+  res.status(StatusCodes.OK).json({ job });
 };
 
 module.exports = { createJob, getAllJobs, getJob, updateJob, deleteJob };

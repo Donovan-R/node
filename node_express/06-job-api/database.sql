@@ -1,34 +1,33 @@
-create database jobs_api;
+CREATE DATABASE  jobs_api;
 
-create table users(
-    user_id serial primary key,
-    name varchar(50) not null,
-    email varchar(255) not null,
-    password varchar(255) not null,
-    check (char_length(name)>= 3 and char_length(name)<= 50),
-    check (char_length(password) >= 6),
-    unique (email)
+CREATE TABLE users(
+  user_id SERIAL PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  CHECK (char_length(name) >= 3 AND char_length(name) <= 50),
+  CHECK (char_length(password) >= 6),
+  UNIQUE (email)
 );
 
-create table jobs(
-    job_id serial primary key,
-    company varchar(255) not null,
-    position varchar(100) not null,
-    status varchar(255) not null check (status in ('entretien', 'refusé', 'en attente')) default 'en attente',
-    user_id integer references users(user_id) on delete cascade not null,
-    created_at timestamp with time zone not null default now(),
-    updated_at timestamp with time zone not null default now()
+CREATE TABLE jobs(
+  job_id SERIAL PRIMARY KEY,
+  company VARCHAR(50) NOT NULL,
+  position VARCHAR(100) NOT NULL,
+  status VARCHAR(255) NOT NULL CHECK (status in ('entretien', 'refusé', 'en attente')) DEFAULT 'en attente',
+  user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
-create function update_updated_at() returns trigger as $$
-begin 
-new.updated_at = now();
+CREATE FUNCTION update_updated_at() RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-return new;
-end;
-$$ language plpgsql;
-
-create trigger update_jobs
-before update on jobs
-for each row
-execute function update_updated_at();
+CREATE TRIGGER update_jobs
+BEFORE UPDATE ON jobs
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();

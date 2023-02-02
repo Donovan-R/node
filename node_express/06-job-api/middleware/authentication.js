@@ -20,8 +20,6 @@ const auth = (req, res, next) => {
     };
 
     next();
-
-    console.log(payload);
   } catch (error) {
     throw new UnauthentificatedError('Authentification invalide');
   }
