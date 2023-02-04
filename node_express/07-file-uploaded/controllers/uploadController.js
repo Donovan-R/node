@@ -19,7 +19,7 @@ const uploadProductImageLocal = async (req, res) => {
 
   const maxSize = 1024 * 1024; //10 Mb
   if (productImage.size > maxSize) {
-    throw new BadRequestError('veuillez charger une image inférieure à 1 Mb');
+    throw new BadRequestError('veuillez charger une image inférieure à 10 Mb');
   }
 
   //*stocker l'image où l'on veut mais doit être accessible publiquement, express.static()
